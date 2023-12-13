@@ -1,0 +1,24 @@
+---
+- name: Deploy App
+  hosts: 192.168.3.31  # IP-адрес вашего целевого хоста
+  tasks:
+    - name: Установить Git
+      become: yes
+      package:
+        name: git
+        state: present
+      tags: [git]
+
+    - name: Скачать код с GitHub
+      become: yes
+      git:
+        repo: https://github.com/Fineken/PDRIS-2023-Lab2.git
+        dest: /app  # Путь, куда будет скопирован репозиторий
+      tags: [git]
+
+    - name: Запустить Docker Compose
+      become: yes
+      command: docker-compose up -d
+      args:
+        chdir: /app  # Перейти в директорию с кодом
+      tags: [docker-compose]

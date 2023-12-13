@@ -1,0 +1,53 @@
+- name: Setup and Deploy on Local Machine
+  hosts: localhost
+  connection: local
+  become: yes
+  tasks:
+    - name: Создание директории .ssh, если она не существует
+      file:
+        path: /root/.ssh
+        state: directory
+        mode: '0700'
+
+    - name: Генерация SSH ключей
+      openssh_keypair:
+        path: ~/.ssh/id_rsa
+        size: 4096
+        force: no
+
+    - name: Добавление first-remote в known_hosts
+      shell: ssh-keyscan -H 192.168.3.31 >> ~/.ssh/known_hosts
+
+    - name: Добавление second-remote в known_hosts
+      shell: ssh-keyscan -H 192.168.3.32 >> ~/.ssh/known_hosts
+
+    - name: Копирование SSH ключа на first-remote
+      shell: ssh-copy-id -i ~/.ssh/id_rsa.pub root@192.168.3.31
+      ignore_errors: yes
+
+    - name: Копирование SSH ключа на second-remote
+      shell: ssh-copy-id -i ~/.ssh/id_rsa.pub root@192.168.3.32
+      ignore_errors: yes
+
+- name: Setup and Deploy on Remote Hosts
+  hosts: all
+  become: yes
+  tasks:
+    - name: Создание директории для приложения
+      file:
+        path: /app/Popugay
+        state: directory
+
+    - name: Скачать код с GitHub на удалённые хосты
+      git:
+        repo: 'https://github.com/Fineken/Popugay.git'
+        dest: '/app/Popugay'
+        version: 'main'
+
+    - name: Запустить Popugai.py на удалённых хостах
+      command: python3 /app/Popugay/Popugay/Popygai.py
+
+    - name: Проверить наличие файла popygai.txt
+      stat:
+        path: /app/Popugay/Popugay/popygai.txt
+      register: popygai_file
